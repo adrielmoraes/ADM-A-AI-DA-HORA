@@ -14,7 +14,7 @@ export default function AppleIcon() {
           alignItems: "center",
           justifyContent: "center",
           background:
-            "radial-gradient(circle at 30% 30%, rgba(34,211,238,0.35), rgba(0,0,0,0) 55%), radial-gradient(circle at 70% 70%, rgba(168,85,247,0.45), rgba(0,0,0,0) 60%), linear-gradient(135deg, #0b0b12 0%, #070a10 100%)",
+            "radial-gradient(circle at 30% 30%, rgba(239,68,68,0.35), rgba(0,0,0,0) 55%), radial-gradient(circle at 70% 70%, rgba(185,28,28,0.45), rgba(0,0,0,0) 60%), linear-gradient(135deg, #0b0b12 0%, #070a10 100%)",
         }}
       >
         <div
@@ -36,7 +36,7 @@ export default function AppleIcon() {
               width: 68,
               height: 68,
               borderRadius: 22,
-              background: "linear-gradient(135deg, #a855f7 0%, #22d3ee 100%)",
+              background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
