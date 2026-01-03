@@ -134,6 +134,16 @@ export function FuncionarioForms({
   );
   const fechamentoRef = useResetForm(fechamentoState);
 
+  const [toast, setToast] = useState<{ ok: boolean; message: string } | null>(null);
+  useEffect(() => {
+    const states = [producaoState, vendaState, despesaState, fechamentoState].filter(Boolean) as ActionState[];
+    const last = states[states.length - 1] ?? null;
+    if (!last) return;
+    setToast({ ok: last.ok, message: last.message });
+    const t = setTimeout(() => setToast(null), 3200);
+    return () => clearTimeout(t);
+  }, [producaoState, vendaState, despesaState, fechamentoState]);
+
   const precoLitro = parseNumberInput(precoLitroStr);
   const litrosNovo = parseNumberInput(litrosNovoStr);
   const litrosDepois = litrosNoTurno + (litrosNovo ?? 0);
@@ -144,6 +154,13 @@ export function FuncionarioForms({
 
   return (
     <div className={styles.grid}>
+      {toast ? (
+        <div className={styles.toastWrap}>
+          <div className={`${styles.toast} ${toast.ok ? styles.toastOk : styles.toastErr}`}>
+            {toast.message}
+          </div>
+        </div>
+      ) : null}
       <section className={styles.card}>
         <div className={styles.cardHeader}>
           <div className={styles.iconBox} style={{ background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4' }}>
@@ -218,6 +235,10 @@ export function FuncionarioForms({
           <h2 className={styles.h2}>Nova Venda</h2>
         </div>
         <form ref={vendaRef} action={vendaAction} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Data</label>
+            <input name="data" className={styles.input} type="date" defaultValue={defaultDate} />
+          </div>
           <div className={styles.row}>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Valor (R$)</label>
@@ -259,6 +280,10 @@ export function FuncionarioForms({
           <h2 className={styles.h2}>Despesa</h2>
         </div>
         <form ref={despesaRef} action={despesaAction} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Data</label>
+            <input name="data" className={styles.input} type="date" defaultValue={defaultDate} />
+          </div>
           <div className={styles.inputGroup}>
             <label className={styles.label}>Descrição</label>
             <input name="descricao" className={styles.input} placeholder="O que foi gasto?" />

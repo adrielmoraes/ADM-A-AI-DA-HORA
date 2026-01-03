@@ -3,6 +3,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireFuncionario } from "@/lib/require-user";
+import { parseDateOnly } from "@/lib/date";
 
 type ActionState = { ok: boolean; message: string } | null;
 
@@ -36,12 +37,14 @@ export async function registrarCompraAction(_: ActionState, formData: FormData):
   const session = await requireFuncionario();
 
   try {
+    const dataStr = String(formData.get("data") ?? "").trim();
     const clienteId = String(formData.get("clienteId") ?? "").trim();
     const valorStr = String(formData.get("valor") ?? "").trim();
     const litrosStr = String(formData.get("litros") ?? "").trim();
     if (!clienteId || !valorStr) return { ok: false, message: "Informe cliente e valor." };
     if (!session.turnoId) return { ok: false, message: "Turno não encontrado. Faça login novamente." };
 
+    const data = dataStr ? parseDateOnly(dataStr) : new Date();
     const valor = asDecimal(valorStr);
     const litros = litrosStr ? asDecimal(litrosStr) : null;
 
@@ -51,6 +54,7 @@ export async function registrarCompraAction(_: ActionState, formData: FormData):
           tipo: "FIADO",
           valor,
           litros,
+          data,
           usuarioId: session.userId,
           turnoId: session.turnoId,
           clienteFiadoId: clienteId,
@@ -64,6 +68,7 @@ export async function registrarCompraAction(_: ActionState, formData: FormData):
           tipo: "COMPRA",
           valor,
           vendaId: venda.id,
+          data,
           usuarioId: session.userId,
         },
       });
@@ -87,10 +92,12 @@ export async function registrarPagamentoAction(_: ActionState, formData: FormDat
   const session = await requireFuncionario();
 
   try {
+    const dataStr = String(formData.get("data") ?? "").trim();
     const clienteId = String(formData.get("clienteId") ?? "").trim();
     const valorStr = String(formData.get("valor") ?? "").trim();
     if (!clienteId || !valorStr) return { ok: false, message: "Informe cliente e valor." };
 
+    const data = dataStr ? parseDateOnly(dataStr) : new Date();
     const valor = asDecimal(valorStr);
 
     const result = await prisma.$transaction(async (tx) => {
@@ -108,9 +115,10 @@ export async function registrarPagamentoAction(_: ActionState, formData: FormDat
           clienteId,
           tipo: "PAGAMENTO",
           valor,
+          data,
           usuarioId: session.userId,
           marcadoComoPago: true,
-          pagoEm: new Date(),
+          pagoEm: data,
         },
       });
 
@@ -120,14 +128,14 @@ export async function registrarPagamentoAction(_: ActionState, formData: FormDat
         where: { id: clienteId },
         data: {
           saldoDevedor: novoSaldo,
-          quitadoEm: quitado ? new Date() : null,
+          quitadoEm: quitado ? data : null,
         },
       });
 
       if (quitado) {
         await tx.fiadoLancamento.updateMany({
           where: { clienteId, tipo: "COMPRA", marcadoComoPago: false },
-          data: { marcadoComoPago: true, pagoEm: new Date() },
+          data: { marcadoComoPago: true, pagoEm: data },
         });
       }
 

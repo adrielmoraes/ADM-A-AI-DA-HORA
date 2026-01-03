@@ -54,16 +54,19 @@ export async function addVendaAction(_: ActionState | null, formData: FormData) 
   const session = await requireFuncionario();
 
   try {
+    const dataStr = String(formData.get("data") ?? "").trim();
     const valorStr = String(formData.get("valor") ?? "").trim();
     const litrosStr = String(formData.get("litros") ?? "").trim();
     const tipo = String(formData.get("tipo") ?? "").trim();
 
     if (!valorStr || !tipo) return { ok: false, message: "Informe valor e tipo." };
 
+    const data = dataStr ? parseDateOnly(dataStr) : new Date();
     const litros = litrosStr ? asDecimal(litrosStr) : null;
 
     await prisma.venda.create({
       data: {
+        data,
         valor: asDecimal(valorStr),
         litros,
         tipo: tipo as never,
@@ -82,6 +85,7 @@ export async function addDespesaAction(_: ActionState | null, formData: FormData
   const session = await requireFuncionario();
 
   try {
+    const dataStr = String(formData.get("data") ?? "").trim();
     const descricao = String(formData.get("descricao") ?? "").trim();
     const categoria = String(formData.get("categoria") ?? "").trim();
     const valorStr = String(formData.get("valor") ?? "").trim();
@@ -90,8 +94,10 @@ export async function addDespesaAction(_: ActionState | null, formData: FormData
       return { ok: false, message: "Informe descrição, categoria e valor." };
     }
 
+    const data = dataStr ? parseDateOnly(dataStr) : new Date();
     await prisma.despesa.create({
       data: {
+        data,
         descricao,
         categoria,
         valor: asDecimal(valorStr),
