@@ -19,6 +19,13 @@ export function formatDateInputValue(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
+export function formatDateBr(date: Date) {
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const y = date.getUTCFullYear();
+  return `${d}/${m}/${y}`;
+}
+
 export function addDaysUtc(date: Date, days: number) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + days));
 }
@@ -51,4 +58,14 @@ export function enumerateDaysUtc(startInclusive: Date, endExclusive: Date) {
     current = addDaysUtc(current, 1);
   }
   return days;
+}
+
+export function formatTimeBr(date: Date) {
+  const hh = String(date.getUTCHours()).padStart(2, "0");
+  const mm = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+export function formatDateTimeBr(date: Date) {
+  return `${formatDateBr(date)} ${formatTimeBr(date)}`;
 }

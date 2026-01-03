@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-user";
 import styles from "../admin.module.css";
-import { dateRangeUtc, parseDateOnly } from "@/lib/date";
+import { dateRangeUtc, formatTimeBr, parseDateOnly } from "@/lib/date";
 import { Prisma } from "@prisma/client";
 
 function todayDateInputValue() {
@@ -170,8 +170,8 @@ export default async function AuditoriaPage({
                 {turnos.map((t) => (
                   <tr key={t.id}>
                     <td>{t.usuario.nome.split(' ')[0]}</td>
-                    <td>{t.openedAt.toISOString().slice(11, 16)}</td>
-                    <td>{t.closedAt ? t.closedAt.toISOString().slice(11, 16) : "-"}</td>
+                    <td>{formatTimeBr(t.openedAt)}</td>
+                    <td>{t.closedAt ? formatTimeBr(t.closedAt) : "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -201,7 +201,7 @@ export default async function AuditoriaPage({
                     <td>{p.usuario.nome.split(' ')[0]}</td>
                     <td>{p.paneiros}</td>
                     <td>{p.litrosGerados.toFixed(1)}</td>
-                    <td>{p.createdAt.toISOString().slice(11, 16)}</td>
+                    <td>{formatTimeBr(p.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -231,7 +231,7 @@ export default async function AuditoriaPage({
             <tbody>
               {vendas.map((v) => (
                 <tr key={v.id}>
-                  <td>{v.data.toISOString().slice(11, 16)}</td>
+                  <td>{formatTimeBr(v.data)}</td>
                   <td>{v.usuario.nome.split(' ')[0]}</td>
                   <td><span className={styles.pill} style={{ 
                       background: v.tipo === 'FIADO' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(6, 182, 212, 0.2)',

@@ -311,3 +311,30 @@
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.3);
 }
+
+@media (max-width: 640px) {
+  .main {
+    padding: 16px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .button {
+    width: 100%;
+  }
+
+  .filterForm {
+    gap: 12px;
+  }
+}

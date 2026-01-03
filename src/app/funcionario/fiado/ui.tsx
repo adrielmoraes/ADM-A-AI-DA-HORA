@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./fiado.module.css";
 import { criarClienteAction, registrarCompraAction, registrarPagamentoAction } from "./actions";
 
@@ -46,6 +47,7 @@ export function FiadoForms({
   clientes: { id: string; nome: string; saldoDevedor: number }[];
   selectedClienteId: string | null;
 }) {
+  const router = useRouter();
   const [clienteState, clienteAction] = useFormState<ActionState, FormData>(criarClienteAction, null);
   const [compraState, compraAction] = useFormState<ActionState, FormData>(registrarCompraAction, null);
   const [pagamentoState, pagamentoAction] = useFormState<ActionState, FormData>(
@@ -55,6 +57,16 @@ export function FiadoForms({
   const clienteRef = useResetForm(clienteState);
   const compraRef = useResetForm(compraState);
   const pagamentoRef = useResetForm(pagamentoState);
+
+  useEffect(() => {
+    if (clienteState?.ok) router.refresh();
+  }, [clienteState, router]);
+  useEffect(() => {
+    if (compraState?.ok) router.refresh();
+  }, [compraState, router]);
+  useEffect(() => {
+    if (pagamentoState?.ok) router.refresh();
+  }, [pagamentoState, router]);
 
   const [toast, setToast] = useState<{ ok: boolean; message: string } | null>(null);
   useEffect(() => {

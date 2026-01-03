@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./funcionario.module.css";
 import {
   addDespesaAction,
@@ -103,6 +104,7 @@ export function FuncionarioForms({
   litrosNoTurno: number;
   vendasTotalNoTurno: number;
 }) {
+  const router = useRouter();
   const [producaoState, producaoAction] = useFormState<ActionState | null, FormData>(
     addProducaoAction,
     null,
@@ -133,6 +135,19 @@ export function FuncionarioForms({
     null,
   );
   const fechamentoRef = useResetForm(fechamentoState);
+
+  useEffect(() => {
+    if (producaoState?.ok) router.refresh();
+  }, [producaoState, router]);
+  useEffect(() => {
+    if (vendaState?.ok) router.refresh();
+  }, [vendaState, router]);
+  useEffect(() => {
+    if (despesaState?.ok) router.refresh();
+  }, [despesaState, router]);
+  useEffect(() => {
+    if (fechamentoState?.ok) router.refresh();
+  }, [fechamentoState, router]);
 
   const [toast, setToast] = useState<{ ok: boolean; message: string } | null>(null);
   useEffect(() => {

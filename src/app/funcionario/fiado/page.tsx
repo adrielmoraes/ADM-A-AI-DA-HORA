@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireFuncionario } from "@/lib/require-user";
+import { formatDateBr } from "@/lib/date";
 import styles from "./fiado.module.css";
 import { FiadoForms } from "./ui";
 
@@ -94,7 +95,7 @@ export default async function FiadoPage({
                 <tbody>
                   {lancamentos.map((l) => (
                     <tr key={l.id}>
-                      <td>{l.data.toISOString().slice(0, 10)}</td>
+                      <td>{formatDateBr(l.data)}</td>
                       <td>{l.tipo}</td>
                       <td>R$ {l.valor.toFixed(2)}</td>
                       <td>{l.usuario.nome}</td>
@@ -109,4 +110,3 @@ export default async function FiadoPage({
     </main>
   );
 }
-

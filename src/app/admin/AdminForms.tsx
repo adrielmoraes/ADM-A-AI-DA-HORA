@@ -1,8 +1,10 @@
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./admin.module.css";
-import { createUserAction, lancarDiariaAction, upsertConfigAction } from "./actions";
+import { createUserAction, lancarDiariaAction, upsertConfigAction, upsertFixosAction } from "./actions";
 
 type ActionState = { ok: boolean; message: string } | null;
 
@@ -27,12 +29,27 @@ export function AdminForms({
   defaultDate: string;
   funcionarios: Array<{ id: string; nome: string }>;
 }) {
+  const router = useRouter();
   const [configState, configAction] = useFormState<ActionState, FormData>(
     upsertConfigAction,
     null,
   );
+  const [fixosState, fixosAction] = useFormState<ActionState, FormData>(upsertFixosAction, null);
   const [userState, userAction] = useFormState<ActionState, FormData>(createUserAction, null);
   const [diariaState, diariaAction] = useFormState<ActionState, FormData>(lancarDiariaAction, null);
+
+  useEffect(() => {
+    if (configState?.ok) router.refresh();
+  }, [configState, router]);
+  useEffect(() => {
+    if (fixosState?.ok) router.refresh();
+  }, [fixosState, router]);
+  useEffect(() => {
+    if (userState?.ok) router.refresh();
+  }, [userState, router]);
+  useEffect(() => {
+    if (diariaState?.ok) router.refresh();
+  }, [diariaState, router]);
 
   return (
     <div className={styles.grid}>
@@ -48,8 +65,24 @@ export function AdminForms({
             <input name="precoLitroVenda" className={styles.input} inputMode="decimal" />
           </label>
           <label className={styles.label}>
-            Custo por paneiro (R$)
+            Preço por paneiro (R$)
             <input name="custoPaneiroInsumo" className={styles.input} inputMode="decimal" />
+          </label>
+          <label className={styles.label}>
+            Quantidade de paneiros
+            <input name="quantidadePaneiros" className={styles.input} inputMode="numeric" placeholder="0" />
+          </label>
+          <SubmitButton label="Salvar configuração" />
+          <Status state={configState} />
+        </form>
+      </section>
+
+      <section className={styles.card}>
+        <h2 className={styles.h2}>Custos Fixos</h2>
+        <form action={fixosAction} className={styles.form}>
+          <label className={styles.label}>
+            Vigência
+            <input name="effectiveFrom" className={styles.input} type="date" defaultValue={defaultDate} />
           </label>
           <label className={styles.label}>
             Aluguel mensal do ponto (R$)
@@ -59,8 +92,8 @@ export function AdminForms({
             Energia mensal (R$)
             <input name="energiaMensal" className={styles.input} inputMode="decimal" placeholder="Rateado por 30 dias" />
           </label>
-          <SubmitButton label="Salvar configuração" />
-          <Status state={configState} />
+          <SubmitButton label="Salvar custos fixos" />
+          <Status state={fixosState} />
         </form>
       </section>
 

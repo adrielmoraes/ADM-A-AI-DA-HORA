@@ -5,7 +5,7 @@ import styles from "./admin.module.css";
 import { AdminForms } from "./AdminForms";
 import { validarDespesaAction } from "./actions";
 import { Prisma } from "@prisma/client";
-import { dateRangeUtc, parseDateOnly } from "@/lib/date";
+import { dateRangeUtc, formatDateBr, parseDateOnly } from "@/lib/date";
 
 function todayDateInputValue() {
   const now = new Date();
@@ -55,7 +55,7 @@ export default async function AdminPage() {
   const despesas = despesasHoje._sum.valor ?? new Prisma.Decimal(0);
   const paneiros = paneirosHoje._sum.paneiros ?? 0;
   const custoPaneiro = configToday?.custoPaneiroInsumo ?? null;
-  const custoInsumo = custoPaneiro ? custoPaneiro.mul(paneiros) : null;
+  const custoInsumo = custoPaneiro;
   const aluguelMensal = configToday?.aluguelMensal ?? new Prisma.Decimal(0);
   const energiaMensal = configToday?.energiaMensal ?? new Prisma.Decimal(0);
   const fixosHoje = aluguelMensal.plus(energiaMensal).div(30);
@@ -140,7 +140,7 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
            <AdminForms defaultDate={today} funcionarios={funcionarios} />
            
@@ -162,7 +162,7 @@ export default async function AdminPage() {
                 <tbody>
                   {despesasPendentes.map((d) => (
                     <tr key={d.id}>
-                      <td>{d.data.toISOString().slice(8, 10)}/{d.data.toISOString().slice(5, 7)}</td>
+                      <td>{formatDateBr(d.data)}</td>
                       <td>{d.usuario.nome.split(' ')[0]}</td>
                       <td style={{ fontWeight: '600' }}>R$ {d.valor.toFixed(2)}</td>
                       <td>
@@ -210,7 +210,7 @@ export default async function AdminPage() {
               <tbody>
                 {fechamentos.map((f) => (
                   <tr key={f.id}>
-                    <td>{f.data.toISOString().slice(8, 10)}/{f.data.toISOString().slice(5, 7)}</td>
+                    <td>{formatDateBr(f.data)}</td>
                     <td>{f.usuario.nome.split(' ')[0]}</td>
                     <td>R$ {f.valorReal.toFixed(2)}</td>
                     <td style={{ 

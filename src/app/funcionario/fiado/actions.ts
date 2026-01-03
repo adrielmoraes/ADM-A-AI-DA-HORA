@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireFuncionario } from "@/lib/require-user";
 import { parseDateOnly } from "@/lib/date";
+import { revalidatePath } from "next/cache";
 
 type ActionState = { ok: boolean; message: string } | null;
 
@@ -27,6 +28,7 @@ export async function criarClienteAction(_: ActionState, formData: FormData): Pr
       },
     });
 
+    revalidatePath("/funcionario/fiado");
     return { ok: true, message: "Cliente criado." };
   } catch {
     return { ok: false, message: "Falha ao criar cliente." };
@@ -82,6 +84,10 @@ export async function registrarCompraAction(_: ActionState, formData: FormData):
       });
     });
 
+    revalidatePath("/funcionario");
+    revalidatePath("/funcionario/fiado");
+    revalidatePath("/admin");
+    revalidatePath("/admin/fiado");
     return { ok: true, message: "Compra registrada no fiado." };
   } catch {
     return { ok: false, message: "Falha ao registrar compra." };
@@ -142,6 +148,12 @@ export async function registrarPagamentoAction(_: ActionState, formData: FormDat
       return { ok: true as const, message: "Pagamento registrado." };
     });
 
+    if (result.ok) {
+      revalidatePath("/funcionario");
+      revalidatePath("/funcionario/fiado");
+      revalidatePath("/admin");
+      revalidatePath("/admin/fiado");
+    }
     return result;
   } catch {
     return { ok: false, message: "Falha ao registrar pagamento." };

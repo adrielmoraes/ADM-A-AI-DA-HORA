@@ -252,3 +252,36 @@
     transform: translateY(0);
   }
 }
+
+@media (max-width: 640px) {
+  .main {
+    padding: 16px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .top a {
+    width: 100%;
+  }
+
+  .toastWrap {
+    left: 16px;
+    right: 16px;
+  }
+
+  .toast {
+    max-width: none;
+  }
+
+  .table {
+    display: block;
+    overflow-x: auto;
+  }
+}

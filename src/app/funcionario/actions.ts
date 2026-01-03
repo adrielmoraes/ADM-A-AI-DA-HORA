@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { parseDateOnly } from "@/lib/date";
 import { requireFuncionario } from "@/lib/require-user";
 import { clearSession } from "@/lib/session";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 type ActionState =
@@ -44,6 +45,9 @@ export async function addProducaoAction(_: ActionState | null, formData: FormDat
       },
     });
 
+    revalidatePath("/funcionario");
+    revalidatePath("/admin");
+    revalidatePath("/admin/relatorios");
     return { ok: true, message: "Produção registrada." };
   } catch {
     return { ok: false, message: "Falha ao registrar produção." };
@@ -75,6 +79,9 @@ export async function addVendaAction(_: ActionState | null, formData: FormData) 
       },
     });
 
+    revalidatePath("/funcionario");
+    revalidatePath("/admin");
+    revalidatePath("/admin/relatorios");
     return { ok: true, message: "Venda registrada." };
   } catch {
     return { ok: false, message: "Falha ao registrar venda." };
@@ -106,6 +113,9 @@ export async function addDespesaAction(_: ActionState | null, formData: FormData
       },
     });
 
+    revalidatePath("/funcionario");
+    revalidatePath("/admin");
+    revalidatePath("/admin/relatorios");
     return { ok: true, message: "Despesa registrada (pendente de validação)." };
   } catch {
     return { ok: false, message: "Falha ao registrar despesa." };

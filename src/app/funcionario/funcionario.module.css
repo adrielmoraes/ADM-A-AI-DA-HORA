@@ -455,3 +455,31 @@
     transform: translateY(0);
   }
 }
+
+@media (max-width: 640px) {
+  .main {
+    padding: 16px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .toastWrap {
+    left: 16px;
+    right: 16px;
+  }
+
+  .toast {
+    max-width: none;
+  }
+}
