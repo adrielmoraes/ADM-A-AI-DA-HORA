@@ -72,6 +72,10 @@ function computeCostsByDay(
 
   let idx = 0;
   for (const day of days) {
+    if (configs[0].effectiveFrom > day) {
+      costs.set(formatDateInputValue(day), new Prisma.Decimal(0));
+      continue;
+    }
     while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
     const paneiros = paneirosByDay.get(formatDateInputValue(day)) ?? 0;
     const cost = configs[idx].custoPaneiroInsumo.mul(paneiros);
@@ -89,6 +93,10 @@ function computeFixosByDay(
 
   let idx = 0;
   for (const day of days) {
+    if (configs[0].effectiveFrom > day) {
+      fixos.set(formatDateInputValue(day), new Prisma.Decimal(0));
+      continue;
+    }
     while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
     const daily = configs[idx].aluguelMensal.plus(configs[idx].energiaMensal).div(30);
     fixos.set(formatDateInputValue(day), daily);
@@ -126,8 +134,8 @@ export default async function RelatoriosPage({
         },
       }),
       prisma.venda.findMany({
-        where: { data: { gte: start, lt: end }, tipo: { not: "FIADO" } },
-        select: { data: true, valor: true },
+        where: { data: { gte: start, lt: end } },
+        select: { data: true, valor: true, tipo: true },
       }),
       prisma.fiadoLancamento.findMany({
         where: { data: { gte: start, lt: end }, tipo: "PAGAMENTO" },
@@ -147,8 +155,13 @@ export default async function RelatoriosPage({
       }),
     ]);
 
+  const vendasSemFiado = vendas.filter((v) => v.tipo !== "FIADO");
+  const vendasFiado = vendas.filter((v) => v.tipo === "FIADO");
+
   const entradasVendasByDay = sumByDay(vendas);
-  const entradasFiadoByDay = sumByDay(pagamentosFiado);
+  const vendasSemFiadoByDay = sumByDay(vendasSemFiado);
+  const vendasFiadoByDay = sumByDay(vendasFiado);
+  const recebimentosFiadoByDay = sumByDay(pagamentosFiado);
   const despesasByDay = sumByDay(despesasValidadas);
   const paneirosByDay = sumPaneirosByDay(producao);
   const custosByDay = computeCostsByDay(days, paneirosByDay, configs);
@@ -158,7 +171,15 @@ export default async function RelatoriosPage({
     (acc, v) => acc.plus(v),
     new Prisma.Decimal(0),
   );
-  const totalFiadoPago = Array.from(entradasFiadoByDay.values()).reduce(
+  const totalVendasSemFiado = Array.from(vendasSemFiadoByDay.values()).reduce(
+    (acc, v) => acc.plus(v),
+    new Prisma.Decimal(0),
+  );
+  const totalVendasFiado = Array.from(vendasFiadoByDay.values()).reduce(
+    (acc, v) => acc.plus(v),
+    new Prisma.Decimal(0),
+  );
+  const totalFiadoPago = Array.from(recebimentosFiadoByDay.values()).reduce(
     (acc, v) => acc.plus(v),
     new Prisma.Decimal(0),
   );
@@ -175,7 +196,7 @@ export default async function RelatoriosPage({
     new Prisma.Decimal(0),
   );
 
-  const entradas = totalVendas.plus(totalFiadoPago);
+  const entradas = totalVendas;
   const lucro = entradas.minus(totalDespesas).minus(totalCustos).minus(totalFixos);
 
   return (
@@ -225,9 +246,11 @@ export default async function RelatoriosPage({
               {formatCurrency(entradas)}
             </span>
             <div className={styles.meta} style={{ fontSize: "12px" }}>
-              Vendas: {formatCurrency(totalVendas)}
+              Vendas (sem fiado): {formatCurrency(totalVendasSemFiado)}
               <br />
-              Fiado Pago: {formatCurrency(totalFiadoPago)}
+              Vendas (fiado): {formatCurrency(totalVendasFiado)}
+              <br />
+              Recebimento de fiado: {formatCurrency(totalFiadoPago)}
             </div>
           </div>
         </div>
@@ -286,9 +309,7 @@ export default async function RelatoriosPage({
               <tbody>
                 {days.map((d) => {
                   const key = formatDateInputValue(d);
-                  const e = (entradasVendasByDay.get(key) ?? new Prisma.Decimal(0)).plus(
-                    entradasFiadoByDay.get(key) ?? new Prisma.Decimal(0),
-                  );
+                  const e = entradasVendasByDay.get(key) ?? new Prisma.Decimal(0);
                   const des = despesasByDay.get(key) ?? new Prisma.Decimal(0);
                   const fixos = fixosByDay.get(key) ?? new Prisma.Decimal(0);
                   const paneiros = paneirosByDay.get(key) ?? 0;

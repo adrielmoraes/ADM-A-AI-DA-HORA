@@ -111,7 +111,7 @@ export default async function AdminPage() {
           <div className={styles.meta}>Despesas (Hoje)</div>
           <div style={{ fontSize: '24px', fontWeight: '700', color: '#fca5a5' }}>R$ {despesasTotaisHoje.toFixed(2)}</div>
           <div className={styles.meta} style={{ fontSize: '12px' }}>
-            Lançadas: R$ {despesas.toFixed(2)} · Fixos (rateio): R$ {fixosHoje.toFixed(2)}
+            Validadas: R$ {despesas.toFixed(2)} · Fixos (rateio): R$ {fixosHoje.toFixed(2)}
           </div>
         </div>
         <div className={styles.card} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -129,6 +129,10 @@ export default async function AdminPage() {
           <div className={styles.meta} style={{ color: '#86efac' }}>Lucro Estimado (Hoje)</div>
           <div style={{ fontSize: '28px', fontWeight: '800', color: '#4ade80', textShadow: '0 0 20px rgba(74, 222, 128, 0.4)' }}>
             R$ {lucro.toFixed(2)}
+          </div>
+          <div className={styles.meta} style={{ fontSize: '12px', color: '#bbf7d0' }}>
+            Entradas: R$ {entradas.toFixed(2)} · Despesas: R$ {despesasTotaisHoje.toFixed(2)}
+            {custoInsumo ? ` · Insumo: R$ ${custoInsumo.toFixed(2)}` : ""}
           </div>
           {!custoPaneiro ? (
             <div style={{ fontSize: '12px', color: '#fca5a5' }}>Sem custo de insumo (paneiro) configurado</div>
