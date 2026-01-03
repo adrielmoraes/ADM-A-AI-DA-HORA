@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CargoUsuario {
+  ADMIN
+  FUNCIONARIO
+}
+
+enum TipoVenda {
+  PIX
+  CARTAO
+  DINHEIRO
+  ENTREGA
+  FIADO
+}
+
+enum StatusDespesa {
+  PENDENTE
+  VALIDADA
+  REJEITADA
+}
+
+enum StatusFechamento {
+  PENDENTE
+  ENVIADO
+  REVISADO
+}
+
+enum TipoFiadoLancamento {
+  COMPRA
+  PAGAMENTO
+}
+
+model Usuario {
+  id        String       @id @default(uuid())
+  nome      String
+  pinHash   String
+  cargo     CargoUsuario
+  ativo     Boolean      @default(true)
+  createdAt DateTime     @default(now())
+
+  turnos      Turno[]
+  producoes   Producao[]
+  vendas      Venda[]
+  despesas    Despesa[]
+  fechamentos FechamentoDiario[]
+  fiadoLancamentos FiadoLancamento[]
+  configs     ConfigFinanceira[] @relation("ConfigCriadaPor")
+  despesasValidadas Despesa[]    @relation("DespesaValidadaPor")
+
+  @@unique([nome])
+}
+
+model Turno {
+  id        String    @id @default(uuid())
+  usuarioId String
+  openedAt  DateTime  @default(now())
+  closedAt  DateTime?
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  producoes Producao[]
+  vendas    Venda[]
+  despesas  Despesa[]
+  fechamentos FechamentoDiario[]
+
+  @@index([usuarioId])
+}
+
+model ConfigFinanceira {
+  id             String   @id @default(uuid())
+  effectiveFrom  DateTime @db.Date
+  precoLitroVenda Decimal @db.Decimal(12, 2)
+  custoPaneiroInsumo Decimal @db.Decimal(12, 2)
+  aluguelMensal  Decimal @db.Decimal(12, 2) @default(0)
+  energiaMensal  Decimal @db.Decimal(12, 2) @default(0)
+  createdAt      DateTime @default(now())
+  createdById    String
+
+  createdBy Usuario @relation("ConfigCriadaPor", fields: [createdById], references: [id])
+
+  @@unique([effectiveFrom])
+}
+
+model Producao {
+  id           String   @id @default(uuid())
+  data         DateTime @db.Date
+  paneiros     Int
+  litrosGerados Decimal @db.Decimal(12, 3)
+  createdAt    DateTime @default(now())
+  usuarioId    String
+  turnoId      String?
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  turno   Turno?  @relation(fields: [turnoId], references: [id])
+
+  @@index([data])
+  @@index([usuarioId])
+}
+
+model Venda {
+  id        String   @id @default(uuid())
+  data      DateTime @default(now())
+  valor     Decimal  @db.Decimal(12, 2)
+  litros    Decimal? @db.Decimal(12, 3)
+  tipo      TipoVenda
+  usuarioId String
+  turnoId   String?
+  clienteFiadoId String?
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  turno   Turno?  @relation(fields: [turnoId], references: [id])
+  clienteFiado ClienteFiado? @relation(fields: [clienteFiadoId], references: [id])
+  fiadoLancamento FiadoLancamento?
+
+  @@index([usuarioId])
+  @@index([data])
+}
+
+model ClienteFiado {
+  id          String   @id @default(uuid())
+  nome        String
+  telefone    String?
+  saldoDevedor Decimal @db.Decimal(12, 2) @default(0)
+  quitadoEm   DateTime?
+  ativo       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  vendas      Venda[]
+  lancamentos FiadoLancamento[]
+
+  @@index([nome])
+}
+
+model FiadoLancamento {
+  id            String   @id @default(uuid())
+  clienteId     String
+  tipo          TipoFiadoLancamento
+  valor         Decimal  @db.Decimal(12, 2)
+  data          DateTime @default(now())
+  vendaId       String?  @unique
+  usuarioId     String
+  marcadoComoPago Boolean @default(false)
+  pagoEm        DateTime?
+
+  cliente ClienteFiado @relation(fields: [clienteId], references: [id])
+  venda   Venda?       @relation(fields: [vendaId], references: [id])
+  usuario Usuario      @relation(fields: [usuarioId], references: [id])
+
+  @@index([clienteId])
+  @@index([data])
+}
+
+model Despesa {
+  id         String       @id @default(uuid())
+  data       DateTime     @default(now())
+  descricao  String
+  valor      Decimal      @db.Decimal(12, 2)
+  categoria  String
+  imagemUrl  String?
+  status     StatusDespesa @default(PENDENTE)
+  extracaoIa Json?
+  usuarioId  String
+  turnoId    String?
+  validadoPorId String?
+  validadoEm DateTime?
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  turno   Turno?  @relation(fields: [turnoId], references: [id])
+  validadoPor Usuario? @relation("DespesaValidadaPor", fields: [validadoPorId], references: [id])
+
+  @@index([data])
+  @@index([status])
+  @@index([usuarioId])
+}
+
+model FechamentoDiario {
+  id            String   @id @default(uuid())
+  data          DateTime @db.Date
+  valorEsperado Decimal  @db.Decimal(12, 2)
+  valorReal     Decimal  @db.Decimal(12, 2)
+  diferenca     Decimal  @db.Decimal(12, 2)
+  sobraLitros   Decimal  @db.Decimal(12, 3)
+  justificativa String?
+  status        StatusFechamento @default(ENVIADO)
+  usuarioId     String
+  turnoId       String
+  createdAt     DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  turno   Turno   @relation(fields: [turnoId], references: [id])
+
+  @@unique([turnoId])
+  @@index([data])
+}
