@@ -43,10 +43,10 @@ export async function registrarCompraAction(_: ActionState, formData: FormData):
     const clienteId = String(formData.get("clienteId") ?? "").trim();
     const valorStr = String(formData.get("valor") ?? "").trim();
     const litrosStr = String(formData.get("litros") ?? "").trim();
-    if (!clienteId || !valorStr) return { ok: false, message: "Informe cliente e valor." };
+    if (!clienteId || !valorStr || !dataStr) return { ok: false, message: "Informe data, cliente e valor." };
     if (!session.turnoId) return { ok: false, message: "Turno não encontrado. Faça login novamente." };
 
-    const data = dataStr ? parseDateOnly(dataStr) : new Date();
+    const data = parseDateOnly(dataStr);
     const valor = asDecimal(valorStr);
     const litros = litrosStr ? asDecimal(litrosStr) : null;
 
@@ -101,9 +101,9 @@ export async function registrarPagamentoAction(_: ActionState, formData: FormDat
     const dataStr = String(formData.get("data") ?? "").trim();
     const clienteId = String(formData.get("clienteId") ?? "").trim();
     const valorStr = String(formData.get("valor") ?? "").trim();
-    if (!clienteId || !valorStr) return { ok: false, message: "Informe cliente e valor." };
+    if (!clienteId || !valorStr || !dataStr) return { ok: false, message: "Informe data, cliente e valor." };
 
-    const data = dataStr ? parseDateOnly(dataStr) : new Date();
+    const data = parseDateOnly(dataStr);
     const valor = asDecimal(valorStr);
 
     const result = await prisma.$transaction(async (tx) => {

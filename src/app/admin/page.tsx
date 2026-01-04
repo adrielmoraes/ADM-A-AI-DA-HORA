@@ -5,7 +5,15 @@ import styles from "./admin.module.css";
 import { AdminForms } from "./AdminForms";
 import { validarDespesaAction } from "./actions";
 import { Prisma } from "@prisma/client";
-import { dateRangeUtc, formatDateBr, parseDateOnly } from "@/lib/date";
+import {
+  addDaysUtc,
+  dateRangeUtc,
+  enumerateDaysUtc,
+  formatDateBr,
+  formatDateInputValue,
+  parseDateOnly,
+  startOfMonthUtc,
+} from "@/lib/date";
 
 function todayDateInputValue() {
   const now = new Date();
@@ -15,11 +23,66 @@ function todayDateInputValue() {
   return `${y}-${m}-${d}`;
 }
 
+function sumByDay(rows: { data: Date; valor: Prisma.Decimal }[]) {
+  const map = new Map<string, Prisma.Decimal>();
+  for (const r of rows) {
+    const key = formatDateInputValue(
+      new Date(Date.UTC(r.data.getUTCFullYear(), r.data.getUTCMonth(), r.data.getUTCDate())),
+    );
+    map.set(key, (map.get(key) ?? new Prisma.Decimal(0)).plus(r.valor));
+  }
+  return map;
+}
+
+function computeCostsByDay(
+  days: Date[],
+  configs: { effectiveFrom: Date; custoPaneiroInsumo: Prisma.Decimal }[],
+) {
+  const costs = new Map<string, Prisma.Decimal>();
+  if (configs.length === 0) return costs;
+
+  let idx = 0;
+  for (const day of days) {
+    if (configs[0].effectiveFrom > day) {
+      costs.set(formatDateInputValue(day), new Prisma.Decimal(0));
+      continue;
+    }
+    while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
+    const cost = configs[idx].custoPaneiroInsumo;
+    costs.set(formatDateInputValue(day), cost);
+  }
+  return costs;
+}
+
+function computeFixosByDay(
+  days: Date[],
+  configs: { effectiveFrom: Date; aluguelMensal: Prisma.Decimal; energiaMensal: Prisma.Decimal }[],
+) {
+  const fixos = new Map<string, Prisma.Decimal>();
+  if (configs.length === 0) return fixos;
+
+  let idx = 0;
+  for (const day of days) {
+    if (configs[0].effectiveFrom > day) {
+      fixos.set(formatDateInputValue(day), new Prisma.Decimal(0));
+      continue;
+    }
+    while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
+    const daily = configs[idx].aluguelMensal.plus(configs[idx].energiaMensal).div(30);
+    fixos.set(formatDateInputValue(day), daily);
+  }
+  return fixos;
+}
+
 export default async function AdminPage() {
   const session = await requireAdmin();
   const today = todayDateInputValue();
   const todayDate = parseDateOnly(today);
   const { start, end } = dateRangeUtc(todayDate);
+
+  const monthStart = startOfMonthUtc(todayDate);
+  const monthEnd = addDaysUtc(end, 0);
+  const monthDays = enumerateDaysUtc(monthStart, monthEnd);
 
   const configToday = await prisma.configFinanceira.findFirst({
     where: { effectiveFrom: { lte: todayDate } },
@@ -27,8 +90,13 @@ export default async function AdminPage() {
     select: { custoPaneiroInsumo: true, aluguelMensal: true, energiaMensal: true },
   });
 
-  const vendasHoje = await prisma.venda.aggregate({
-    where: { data: { gte: start, lt: end } },
+  const vendasHojeSemFiado = await prisma.venda.aggregate({
+    where: { data: { gte: start, lt: end }, tipo: { not: "FIADO" } },
+    _sum: { valor: true },
+  });
+
+  const fiadoPagoHoje = await prisma.fiadoLancamento.aggregate({
+    where: { data: { gte: start, lt: end }, tipo: "PAGAMENTO" },
     _sum: { valor: true },
   });
 
@@ -45,13 +113,45 @@ export default async function AdminPage() {
     _sum: { paneiros: true },
   });
 
-  const funcionarios = await prisma.usuario.findMany({
-    where: { cargo: "FUNCIONARIO", ativo: true },
-    orderBy: { nome: "asc" },
-    select: { id: true, nome: true },
-  });
+  const [
+    funcionarios,
+    configsMes,
+    vendasMes,
+    pagamentosFiadoMes,
+    despesasMesValidadas,
+  ] = await Promise.all([
+    prisma.usuario.findMany({
+      where: { cargo: "FUNCIONARIO", ativo: true },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true },
+    }),
+    prisma.configFinanceira.findMany({
+      where: { effectiveFrom: { lte: todayDate } },
+      orderBy: { effectiveFrom: "asc" },
+      select: {
+        effectiveFrom: true,
+        custoPaneiroInsumo: true,
+        aluguelMensal: true,
+        energiaMensal: true,
+      },
+    }),
+    prisma.venda.findMany({
+      where: { data: { gte: monthStart, lt: monthEnd } },
+      select: { data: true, valor: true, tipo: true },
+    }),
+    prisma.fiadoLancamento.findMany({
+      where: { data: { gte: monthStart, lt: monthEnd }, tipo: "PAGAMENTO" },
+      select: { data: true, valor: true },
+    }),
+    prisma.despesa.findMany({
+      where: { data: { gte: monthStart, lt: monthEnd }, status: "VALIDADA" },
+      select: { data: true, valor: true },
+    }),
+  ]);
 
-  const entradas = vendasHoje._sum.valor ?? new Prisma.Decimal(0);
+  const entradasRecebidas = vendasHojeSemFiado._sum.valor ?? new Prisma.Decimal(0);
+  const entradasFiadoPago = fiadoPagoHoje._sum.valor ?? new Prisma.Decimal(0);
+  const entradas = entradasRecebidas.plus(entradasFiadoPago);
   const despesas = despesasHoje._sum.valor ?? new Prisma.Decimal(0);
   const paneiros = paneirosHoje._sum.paneiros ?? 0;
   const custoPaneiro = configToday?.custoPaneiroInsumo ?? null;
@@ -63,6 +163,47 @@ export default async function AdminPage() {
   const lucro = custoInsumo
     ? entradas.minus(despesasTotaisHoje).minus(custoInsumo)
     : entradas.minus(despesasTotaisHoje);
+
+  const vendasMesSemFiado = vendasMes.filter((v) => v.tipo !== "FIADO");
+  const vendasSemFiadoByDay = sumByDay(vendasMesSemFiado);
+  const recebimentosFiadoByDayMes = sumByDay(pagamentosFiadoMes);
+  const despesasByDayMes = sumByDay(despesasMesValidadas);
+  const custosByDayMes = computeCostsByDay(
+    monthDays,
+    configsMes.map((c) => ({ effectiveFrom: c.effectiveFrom, custoPaneiroInsumo: c.custoPaneiroInsumo })),
+  );
+  const fixosByDayMes = computeFixosByDay(
+    monthDays,
+    configsMes.map((c) => ({
+      effectiveFrom: c.effectiveFrom,
+      aluguelMensal: c.aluguelMensal,
+      energiaMensal: c.energiaMensal,
+    })),
+  );
+
+  const totalVendasSemFiadoMes = Array.from(vendasSemFiadoByDay.values()).reduce(
+    (acc, v) => acc.plus(v),
+    new Prisma.Decimal(0),
+  );
+  const totalFiadoPagoMes = Array.from(recebimentosFiadoByDayMes.values()).reduce(
+    (acc, v) => acc.plus(v),
+    new Prisma.Decimal(0),
+  );
+  const totalDespesasMes = Array.from(despesasByDayMes.values()).reduce(
+    (acc, v) => acc.plus(v),
+    new Prisma.Decimal(0),
+  );
+  const totalCustosMes = Array.from(custosByDayMes.values()).reduce(
+    (acc, v) => acc.plus(v),
+    new Prisma.Decimal(0),
+  );
+  const totalFixosMes = Array.from(fixosByDayMes.values()).reduce(
+    (acc, v) => acc.plus(v),
+    new Prisma.Decimal(0),
+  );
+
+  const entradasMes = totalVendasSemFiadoMes.plus(totalFiadoPagoMes);
+  const lucroMes = entradasMes.minus(totalDespesasMes).minus(totalCustosMes).minus(totalFixosMes);
 
   const despesasPendentes = await prisma.despesa.findMany({
     where: { status: "PENDENTE" },
@@ -137,6 +278,24 @@ export default async function AdminPage() {
           {!custoPaneiro ? (
             <div style={{ fontSize: '12px', color: '#fca5a5' }}>Sem custo de insumo (paneiro) configurado</div>
           ) : null}
+        </div>
+        <div className={styles.card} style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid rgba(148,163,184,0.4)', background: 'rgba(15,23,42,0.8)' }}>
+          <div className={styles.meta}>Lucro / Prejuízo Acumulado (Mês)</div>
+          <div
+            style={{
+              fontSize: '24px',
+              fontWeight: '800',
+              color: lucroMes.gte(0) ? '#4ade80' : '#fca5a5',
+            }}
+          >
+            R$ {lucroMes.toFixed(2)}
+          </div>
+          <div className={styles.meta} style={{ fontSize: '12px', opacity: 0.8 }}>
+            Entradas: R$ {entradasMes.toFixed(2)} · Saídas: R$ {totalDespesasMes
+              .plus(totalCustosMes)
+              .plus(totalFixosMes)
+              .toFixed(2)}
+          </div>
         </div>
       </div>
 

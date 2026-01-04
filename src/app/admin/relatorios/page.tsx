@@ -156,7 +156,6 @@ export default async function RelatoriosPage({
   const vendasSemFiado = vendas.filter((v) => v.tipo !== "FIADO");
   const vendasFiado = vendas.filter((v) => v.tipo === "FIADO");
 
-  const entradasVendasByDay = sumByDay(vendas);
   const vendasSemFiadoByDay = sumByDay(vendasSemFiado);
   const vendasFiadoByDay = sumByDay(vendasFiado);
   const recebimentosFiadoByDay = sumByDay(pagamentosFiado);
@@ -165,10 +164,6 @@ export default async function RelatoriosPage({
   const custosByDay = computeCostsByDay(days, configs);
   const fixosByDay = computeFixosByDay(days, configs);
 
-  const totalVendas = Array.from(entradasVendasByDay.values()).reduce(
-    (acc, v) => acc.plus(v),
-    new Prisma.Decimal(0),
-  );
   const totalVendasSemFiado = Array.from(vendasSemFiadoByDay.values()).reduce(
     (acc, v) => acc.plus(v),
     new Prisma.Decimal(0),
@@ -194,7 +189,7 @@ export default async function RelatoriosPage({
     new Prisma.Decimal(0),
   );
 
-  const entradas = totalVendas;
+  const entradas = totalVendasSemFiado.plus(totalFiadoPago);
   const lucro = entradas.minus(totalDespesas).minus(totalCustos).minus(totalFixos);
 
   return (
@@ -307,7 +302,8 @@ export default async function RelatoriosPage({
               <tbody>
                 {days.map((d) => {
                   const key = formatDateInputValue(d);
-                  const e = entradasVendasByDay.get(key) ?? new Prisma.Decimal(0);
+                  const e = vendasSemFiadoByDay.get(key)?.plus(recebimentosFiadoByDay.get(key) ?? new Prisma.Decimal(0)) ??
+                    new Prisma.Decimal(0);
                   const des = despesasByDay.get(key) ?? new Prisma.Decimal(0);
                   const fixos = fixosByDay.get(key) ?? new Prisma.Decimal(0);
                   const paneiros = paneirosByDay.get(key) ?? 0;
