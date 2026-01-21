@@ -176,7 +176,7 @@ export function FuncionarioForms({
           </div>
         </div>
       ) : null}
-      <section className={styles.card}>
+      <section className={`${styles.card} ${styles.cardProducao}`}>
         <div className={styles.cardHeader}>
           <div className={styles.iconBox} style={{ background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -239,7 +239,7 @@ export function FuncionarioForms({
         </form>
       </section>
 
-      <section className={styles.card}>
+      <section className={`${styles.card} ${styles.cardVenda}`}>
         <div className={styles.cardHeader}>
           <div className={styles.iconBox} style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -284,7 +284,7 @@ export function FuncionarioForms({
         </form>
       </section>
 
-      <section className={styles.card}>
+      <section className={`${styles.card} ${styles.cardDespesa}`}>
         <div className={styles.cardHeader}>
           <div className={styles.iconBox} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -318,7 +318,7 @@ export function FuncionarioForms({
         </form>
       </section>
 
-      <section className={styles.card}>
+      <section className={`${styles.card} ${styles.cardFechamento}`}>
         <div className={styles.cardHeader}>
           <div className={styles.iconBox} style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
