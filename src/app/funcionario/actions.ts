@@ -62,6 +62,9 @@ export async function addProducaoAction(_: ActionState | null, formData: FormDat
     return { ok: true, message: "Produção registrada." };
   } catch (error) {
     console.error("Erro ao registrar produção:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return { ok: false, message: "Sessão inválida. Saia e entre novamente." };
+    }
     return { ok: false, message: "Falha ao registrar produção. Verifique os dados." };
   }
 }
@@ -95,7 +98,11 @@ export async function addVendaAction(_: ActionState | null, formData: FormData) 
     revalidatePath("/admin");
     revalidatePath("/admin/relatorios");
     return { ok: true, message: "Venda registrada." };
-  } catch {
+  } catch (error) {
+    console.error("Erro ao registrar venda:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return { ok: false, message: "Sessão inválida. Saia e entre novamente." };
+    }
     return { ok: false, message: "Falha ao registrar venda." };
   }
 }
@@ -129,7 +136,11 @@ export async function addDespesaAction(_: ActionState | null, formData: FormData
     revalidatePath("/admin");
     revalidatePath("/admin/relatorios");
     return { ok: true, message: "Despesa registrada (pendente de validação)." };
-  } catch {
+  } catch (error) {
+    console.error("Erro ao registrar despesa:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return { ok: false, message: "Sessão inválida. Saia e entre novamente." };
+    }
     return { ok: false, message: "Falha ao registrar despesa." };
   }
 }
@@ -237,7 +248,11 @@ export async function fecharCaixaAction(_: ActionState | null, formData: FormDat
 
     await clearSession();
     redirect("/login?ok=fechamento");
-  } catch {
+  } catch (error) {
+    console.error("Erro ao fechar caixa:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return { ok: false, message: "Sessão inválida. Saia e entre novamente." };
+    }
     return { ok: false, message: "Falha ao fechar caixa." };
   }
 }
