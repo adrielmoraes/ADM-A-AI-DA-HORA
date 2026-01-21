@@ -195,15 +195,17 @@ export function FuncionarioForms({
           <div className={styles.row}>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Paneiros</label>
-              <input name="paneiros" className={styles.input} inputMode="numeric" placeholder="0" />
+              <input name="paneiros" className={styles.input} type="number" inputMode="numeric" placeholder="0" step="1" />
             </div>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Litros</label>
               <input
                 name="litrosGerados"
                 className={styles.input}
+                type="number"
                 inputMode="decimal"
                 placeholder="0.0"
+                step="0.1"
                 value={litrosNovoStr}
                 onChange={(e) => setLitrosNovoStr(e.target.value)}
               />

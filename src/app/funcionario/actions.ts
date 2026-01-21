@@ -42,6 +42,9 @@ export async function addProducaoAction(_: ActionState | null, formData: FormDat
     if (!Number.isFinite(paneiros) || paneiros < 0) {
       return { ok: false, message: "Paneiros inválido." };
     }
+    if (!Number.isInteger(paneiros)) {
+      return { ok: false, message: "Paneiros deve ser um número inteiro." };
+    }
 
     await prisma.producao.create({
       data: {
@@ -57,8 +60,9 @@ export async function addProducaoAction(_: ActionState | null, formData: FormDat
     revalidatePath("/admin");
     revalidatePath("/admin/relatorios");
     return { ok: true, message: "Produção registrada." };
-  } catch {
-    return { ok: false, message: "Falha ao registrar produção." };
+  } catch (error) {
+    console.error("Erro ao registrar produção:", error);
+    return { ok: false, message: "Falha ao registrar produção. Verifique os dados." };
   }
 }
 
