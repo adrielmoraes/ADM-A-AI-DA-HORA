@@ -65,19 +65,23 @@ function sumPaneirosByDay(rows: { data: Date; paneiros: number }[]) {
 function computeCostsByDay(
   days: Date[],
   configs: { effectiveFrom: Date; custoPaneiroInsumo: Prisma.Decimal }[],
+  paneirosByDay: Map<string, number>,
 ) {
   const costs = new Map<string, Prisma.Decimal>();
   if (configs.length === 0) return costs;
 
   let idx = 0;
   for (const day of days) {
+    const dayKey = formatDateInputValue(day);
+    const paneiros = paneirosByDay.get(dayKey) ?? 0;
+    
     if (configs[0].effectiveFrom > day) {
-      costs.set(formatDateInputValue(day), new Prisma.Decimal(0));
+      costs.set(dayKey, new Prisma.Decimal(0));
       continue;
     }
     while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
-    const cost = configs[idx].custoPaneiroInsumo;
-    costs.set(formatDateInputValue(day), cost);
+    const costPerPaneiro = configs[idx].custoPaneiroInsumo;
+    costs.set(dayKey, costPerPaneiro.mul(paneiros));
   }
   return costs;
 }
@@ -161,7 +165,7 @@ export default async function RelatoriosPage({
   const recebimentosFiadoByDay = sumByDay(pagamentosFiado);
   const despesasByDay = sumByDay(despesasValidadas);
   const paneirosByDay = sumPaneirosByDay(producao);
-  const custosByDay = computeCostsByDay(days, configs);
+  const custosByDay = computeCostsByDay(days, configs, paneirosByDay);
   const fixosByDay = computeFixosByDay(days, configs);
 
   const totalVendasSemFiado = Array.from(vendasSemFiadoByDay.values()).reduce(

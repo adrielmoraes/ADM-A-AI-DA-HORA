@@ -34,22 +34,35 @@ function sumByDay(rows: { data: Date; valor: Prisma.Decimal }[]) {
   return map;
 }
 
+function sumPaneirosByDay(rows: { data: Date; paneiros: number }[]) {
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    const key = formatDateInputValue(r.data);
+    map.set(key, (map.get(key) ?? 0) + r.paneiros);
+  }
+  return map;
+}
+
 function computeCostsByDay(
   days: Date[],
   configs: { effectiveFrom: Date; custoPaneiroInsumo: Prisma.Decimal }[],
+  paneirosByDay: Map<string, number>,
 ) {
   const costs = new Map<string, Prisma.Decimal>();
   if (configs.length === 0) return costs;
 
   let idx = 0;
   for (const day of days) {
+    const dayKey = formatDateInputValue(day);
+    const paneiros = paneirosByDay.get(dayKey) ?? 0;
+    
     if (configs[0].effectiveFrom > day) {
-      costs.set(formatDateInputValue(day), new Prisma.Decimal(0));
+      costs.set(dayKey, new Prisma.Decimal(0));
       continue;
     }
     while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
-    const cost = configs[idx].custoPaneiroInsumo;
-    costs.set(formatDateInputValue(day), cost);
+    const costPerPaneiro = configs[idx].custoPaneiroInsumo;
+    costs.set(dayKey, costPerPaneiro.mul(paneiros));
   }
   return costs;
 }
@@ -119,6 +132,7 @@ export default async function AdminPage() {
     vendasMes,
     pagamentosFiadoMes,
     despesasMesValidadas,
+    producaoMes,
   ] = await Promise.all([
     prisma.usuario.findMany({
       where: { cargo: "FUNCIONARIO", ativo: true },
@@ -147,6 +161,10 @@ export default async function AdminPage() {
       where: { data: { gte: monthStart, lt: monthEnd }, status: "VALIDADA" },
       select: { data: true, valor: true },
     }),
+    prisma.producao.findMany({
+      where: { data: { gte: monthStart, lt: monthEnd } },
+      select: { data: true, paneiros: true },
+    }),
   ]);
 
   const entradasRecebidas = vendasHojeSemFiado._sum.valor ?? new Prisma.Decimal(0);
@@ -155,22 +173,22 @@ export default async function AdminPage() {
   const despesas = despesasHoje._sum.valor ?? new Prisma.Decimal(0);
   const paneiros = paneirosHoje._sum.paneiros ?? 0;
   const custoPaneiro = configToday?.custoPaneiroInsumo ?? null;
-  const custoInsumo = custoPaneiro;
+  const custoInsumoTotal = custoPaneiro ? custoPaneiro.mul(paneiros) : new Prisma.Decimal(0);
   const aluguelMensal = configToday?.aluguelMensal ?? new Prisma.Decimal(0);
   const energiaMensal = configToday?.energiaMensal ?? new Prisma.Decimal(0);
   const fixosHoje = aluguelMensal.plus(energiaMensal).div(30);
   const despesasTotaisHoje = despesas.plus(fixosHoje);
-  const lucro = custoInsumo
-    ? entradas.minus(despesasTotaisHoje).minus(custoInsumo)
-    : entradas.minus(despesasTotaisHoje);
+  const lucro = entradas.minus(despesasTotaisHoje).minus(custoInsumoTotal);
 
   const vendasMesSemFiado = vendasMes.filter((v) => v.tipo !== "FIADO");
   const vendasSemFiadoByDay = sumByDay(vendasMesSemFiado);
   const recebimentosFiadoByDayMes = sumByDay(pagamentosFiadoMes);
   const despesasByDayMes = sumByDay(despesasMesValidadas);
+  const paneirosByDayMes = sumPaneirosByDay(producaoMes);
   const custosByDayMes = computeCostsByDay(
     monthDays,
     configsMes.map((c) => ({ effectiveFrom: c.effectiveFrom, custoPaneiroInsumo: c.custoPaneiroInsumo })),
+    paneirosByDayMes,
   );
   const fixosByDayMes = computeFixosByDay(
     monthDays,
@@ -273,7 +291,7 @@ export default async function AdminPage() {
           </div>
           <div className={styles.meta} style={{ fontSize: '12px', color: '#bbf7d0' }}>
             Entradas: R$ {entradas.toFixed(2)} · Despesas: R$ {despesasTotaisHoje.toFixed(2)}
-            {custoInsumo ? ` · Insumo: R$ ${custoInsumo.toFixed(2)}` : ""}
+            {custoPaneiro ? ` · Insumo: R$ ${custoInsumoTotal.toFixed(2)} (${paneiros} × R$ ${custoPaneiro.toFixed(2)})` : ""}
           </div>
           {!custoPaneiro ? (
             <div style={{ fontSize: '12px', color: '#fca5a5' }}>Sem custo de insumo (paneiro) configurado</div>
