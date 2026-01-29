@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { clearSession, createSession } from "@/lib/session";
+import { dateRangeUtc } from "@/lib/date";
 
 export async function loginAction(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
@@ -27,18 +28,39 @@ export async function loginAction(formData: FormData) {
 
   const turnoAberto = await prisma.turno.findFirst({
     where: { usuarioId: user.id, closedAt: null },
-    select: { id: true },
+    select: { id: true, openedAt: true },
     orderBy: { openedAt: "desc" },
   });
 
-  const turnoId =
-    turnoAberto?.id ??
-    (
+  const now = new Date();
+  const { start, end } = dateRangeUtc(now);
+  let turnoId: string;
+
+  if (turnoAberto) {
+    const openedAt = turnoAberto.openedAt;
+    const openedToday = openedAt >= start && openedAt < end;
+    if (openedToday) {
+      turnoId = turnoAberto.id;
+    } else {
+      await prisma.turno.update({
+        where: { id: turnoAberto.id },
+        data: { closedAt: now },
+      });
+      turnoId = (
+        await prisma.turno.create({
+          data: { usuarioId: user.id },
+          select: { id: true },
+        })
+      ).id;
+    }
+  } else {
+    turnoId = (
       await prisma.turno.create({
         data: { usuarioId: user.id },
         select: { id: true },
       })
     ).id;
+  }
 
   await createSession({
     userId: user.id,
@@ -55,4 +77,3 @@ export async function logoutAction() {
   await clearSession();
   redirect("/login");
 }
-

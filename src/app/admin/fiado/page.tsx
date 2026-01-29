@@ -21,15 +21,41 @@ function formatDateTime(date: Date) {
   }).format(date);
 }
 
+function parsePage(value: string | undefined) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.floor(n);
+}
+
+function buildFiadoUrl({
+  clienteId,
+  q,
+  lancPage,
+}: {
+  clienteId: string;
+  q: string;
+  lancPage?: number;
+}) {
+  const params = new URLSearchParams();
+  if (clienteId) params.set("clienteId", clienteId);
+  if (q) params.set("q", q);
+  if (lancPage) params.set("lancPage", String(lancPage));
+  const qs = params.toString();
+  return `/admin/fiado${qs ? `?${qs}` : ""}`;
+}
+
 export default async function AdminFiadoPage({
   searchParams,
 }: {
-  searchParams: { clienteId?: string; q?: string };
+  searchParams: { clienteId?: string; q?: string; lancPage?: string };
 }) {
   await requireAdmin();
 
   const clienteId = searchParams.clienteId?.trim() || "";
   const query = searchParams.q?.trim() || "";
+  const perPage = 50;
+  const lancPage = parsePage(searchParams.lancPage);
+  const lancSkip = (lancPage - 1) * perPage;
 
   const clientes = await prisma.clienteFiado.findMany({
     where: {
@@ -47,14 +73,23 @@ export default async function AdminFiadoPage({
       })
     : null;
 
+  const lancamentosTotal = clienteId
+    ? await prisma.fiadoLancamento.count({
+        where: { clienteId },
+      })
+    : 0;
+
   const lancamentos = clienteId
     ? await prisma.fiadoLancamento.findMany({
         where: { clienteId },
         orderBy: { data: "desc" },
-        take: 100,
+        skip: lancSkip,
+        take: perPage,
         include: { usuario: { select: { nome: true } }, venda: true },
       })
     : [];
+
+  const lancPages = Math.max(1, Math.ceil(lancamentosTotal / perPage));
 
   return (
     <main className={styles.main}>
@@ -177,9 +212,9 @@ export default async function AdminFiadoPage({
               </div>
 
               <h3 className={styles.h2} style={{ fontSize: "16px", marginTop: "32px" }}>
-                Histórico de Lançamentos
+                Histórico de Lançamentos ({lancamentosTotal})
               </h3>
-              {lancamentos.length === 0 ? (
+              {lancamentosTotal === 0 ? (
                 <div className={styles.meta}>Nenhum lançamento registrado.</div>
               ) : (
                 <div style={{ overflowX: "auto" }}>
@@ -255,6 +290,29 @@ export default async function AdminFiadoPage({
                   </table>
                 </div>
               )}
+              {lancPages > 1 ? (
+                <div className={styles.actions} style={{ marginTop: "12px", alignItems: "center" }}>
+                  <div className={styles.meta} style={{ fontSize: "12px" }}>
+                    Página {lancPage} de {lancPages}
+                  </div>
+                  {lancPage > 1 ? (
+                    <a
+                      className={styles.button}
+                      href={buildFiadoUrl({ clienteId, q: query, lancPage: lancPage - 1 })}
+                    >
+                      Anterior
+                    </a>
+                  ) : null}
+                  {lancPage < lancPages ? (
+                    <a
+                      className={styles.button}
+                      href={buildFiadoUrl({ clienteId, q: query, lancPage: lancPage + 1 })}
+                    >
+                      Próxima
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
             </>
           )}
         </section>

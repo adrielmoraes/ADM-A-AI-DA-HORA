@@ -65,13 +65,10 @@ export function AdminForms({
             <input name="precoLitroVenda" className={styles.input} inputMode="decimal" />
           </label>
           <label className={styles.label}>
-            Preço por paneiro (R$)
-            <input name="custoPaneiroInsumo" className={styles.input} inputMode="decimal" />
+            Custo por paneiro (R$)
+            <input name="custoPaneiroInsumo" className={styles.input} inputMode="decimal" placeholder="Valor unitário" />
           </label>
-          <label className={styles.label}>
-            Quantidade de paneiros
-            <input name="quantidadePaneiros" className={styles.input} inputMode="numeric" placeholder="0" />
-          </label>
+          {/* Campo quantidade removido pois o custo deve ser unitário */}
           <SubmitButton label="Salvar configuração" />
           <Status state={configState} />
         </form>

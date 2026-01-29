@@ -12,10 +12,35 @@ function todayDateInputValue() {
   return `${y}-${m}-${d}`;
 }
 
+function parsePage(value: string | undefined) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.floor(n);
+}
+
+function buildAuditoriaUrl({
+  data,
+  usuarioId,
+  vendasPage,
+  despesasPage,
+}: {
+  data: string;
+  usuarioId: string;
+  vendasPage?: number;
+  despesasPage?: number;
+}) {
+  const params = new URLSearchParams();
+  params.set("data", data);
+  if (usuarioId) params.set("usuarioId", usuarioId);
+  if (vendasPage) params.set("vendasPage", String(vendasPage));
+  if (despesasPage) params.set("despesasPage", String(despesasPage));
+  return `/admin/auditoria?${params.toString()}`;
+}
+
 export default async function AuditoriaPage({
   searchParams,
 }: {
-  searchParams: { data?: string; usuarioId?: string };
+  searchParams: { data?: string; usuarioId?: string; vendasPage?: string; despesasPage?: string };
 }) {
   await requireAdmin();
 
@@ -23,6 +48,11 @@ export default async function AuditoriaPage({
   const usuarioId = searchParams.usuarioId?.trim() || "";
   const date = parseDateOnly(dataStr);
   const { start, end } = dateRangeUtc(date);
+  const perPage = 50;
+  const vendasPage = parsePage(searchParams.vendasPage);
+  const despesasPage = parsePage(searchParams.despesasPage);
+  const vendasSkip = (vendasPage - 1) * perPage;
+  const despesasSkip = (despesasPage - 1) * perPage;
 
   const usuarios = await prisma.usuario.findMany({
     where: { ativo: true },
@@ -32,7 +62,7 @@ export default async function AuditoriaPage({
 
   const userFilter = usuarioId ? { usuarioId } : {};
 
-  const [configDia, producao, vendas, despesas, fechamentos, turnos] = await Promise.all([
+  const [configDia, producao, vendas, vendasTotal, despesas, despesasTotal, fechamentos, turnos] = await Promise.all([
     prisma.configFinanceira.findFirst({
       where: { effectiveFrom: { lte: date } },
       orderBy: { effectiveFrom: "desc" },
@@ -46,15 +76,25 @@ export default async function AuditoriaPage({
     prisma.venda.findMany({
       where: { data: { gte: start, lt: end }, ...userFilter },
       orderBy: { data: "desc" },
+      skip: vendasSkip,
+      take: perPage,
       include: {
         usuario: { select: { nome: true } },
         clienteFiado: { select: { nome: true } },
       },
     }),
+    prisma.venda.count({
+      where: { data: { gte: start, lt: end }, ...userFilter },
+    }),
     prisma.despesa.findMany({
       where: { data: { gte: start, lt: end }, ...userFilter },
       orderBy: { data: "desc" },
+      skip: despesasSkip,
+      take: perPage,
       include: { usuario: { select: { nome: true } } },
+    }),
+    prisma.despesa.count({
+      where: { data: { gte: start, lt: end }, ...userFilter },
     }),
     prisma.fechamentoDiario.findMany({
       where: { data: date, ...(usuarioId ? { usuarioId } : {}) },
@@ -79,6 +119,8 @@ export default async function AuditoriaPage({
     .filter((d) => d.status === "VALIDADA")
     .reduce((acc, d) => acc.plus(d.valor), new Prisma.Decimal(0));
   const despesasValidadasComFixos = despesasValidadas.plus(fixosDia);
+  const vendasPages = Math.max(1, Math.ceil(vendasTotal / perPage));
+  const despesasPages = Math.max(1, Math.ceil(despesasTotal / perPage));
 
   return (
     <main className={styles.main}>
@@ -212,8 +254,8 @@ export default async function AuditoriaPage({
       </div>
 
       <section className={styles.card}>
-        <h2 className={styles.h2}>Vendas ({vendas.length})</h2>
-        {vendas.length === 0 ? (
+        <h2 className={styles.h2}>Vendas ({vendasTotal})</h2>
+        {vendasTotal === 0 ? (
           <div className={styles.meta}>Sem vendas no período.</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -247,12 +289,45 @@ export default async function AuditoriaPage({
           </table>
           </div>
         )}
+        {vendasPages > 1 ? (
+          <div className={styles.actions} style={{ marginTop: "12px", alignItems: "center" }}>
+            <div className={styles.meta} style={{ fontSize: "12px" }}>
+              Página {vendasPage} de {vendasPages}
+            </div>
+            {vendasPage > 1 ? (
+              <a
+                className={styles.button}
+                href={buildAuditoriaUrl({
+                  data: dataStr,
+                  usuarioId,
+                  vendasPage: vendasPage - 1,
+                  despesasPage,
+                })}
+              >
+                Anterior
+              </a>
+            ) : null}
+            {vendasPage < vendasPages ? (
+              <a
+                className={styles.button}
+                href={buildAuditoriaUrl({
+                  data: dataStr,
+                  usuarioId,
+                  vendasPage: vendasPage + 1,
+                  despesasPage,
+                })}
+              >
+                Próxima
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       <div className={styles.grid}>
         <section className={styles.card}>
-            <h2 className={styles.h2}>Despesas ({despesas.length})</h2>
-            {despesas.length === 0 ? (
+            <h2 className={styles.h2}>Despesas ({despesasTotal})</h2>
+            {despesasTotal === 0 ? (
             <div className={styles.meta}>Sem despesas no período.</div>
             ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -286,6 +361,39 @@ export default async function AuditoriaPage({
             </table>
             </div>
             )}
+            {despesasPages > 1 ? (
+              <div className={styles.actions} style={{ marginTop: "12px", alignItems: "center" }}>
+                <div className={styles.meta} style={{ fontSize: "12px" }}>
+                  Página {despesasPage} de {despesasPages}
+                </div>
+                {despesasPage > 1 ? (
+                  <a
+                    className={styles.button}
+                    href={buildAuditoriaUrl({
+                      data: dataStr,
+                      usuarioId,
+                      vendasPage,
+                      despesasPage: despesasPage - 1,
+                    })}
+                  >
+                    Anterior
+                  </a>
+                ) : null}
+                {despesasPage < despesasPages ? (
+                  <a
+                    className={styles.button}
+                    href={buildAuditoriaUrl({
+                      data: dataStr,
+                      usuarioId,
+                      vendasPage,
+                      despesasPage: despesasPage + 1,
+                    })}
+                  >
+                    Próxima
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
         </section>
 
         <section className={styles.card}>

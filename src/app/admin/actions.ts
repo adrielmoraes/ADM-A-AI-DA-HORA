@@ -40,10 +40,10 @@ export async function upsertConfigAction(_: ActionState | null, formData: FormDa
     });
 
     const custoUnitario = asDecimal(custoStr);
-    const quantidadePaneiros = quantidadePaneirosStr ? Number(quantidadePaneirosStr) : 0;
-    const custoTotal = Number.isFinite(quantidadePaneiros) && quantidadePaneiros > 0
-      ? custoUnitario.mul(quantidadePaneiros)
-      : custoUnitario;
+    
+    // Removida lógica de multiplicação pela quantidade, pois o custo salvo deve ser unitário.
+    // O cálculo total é feito nos relatórios multiplicando este valor pela produção real.
+    const custoTotal = custoUnitario;
 
     if (existing) {
       await prisma.configFinanceira.update({

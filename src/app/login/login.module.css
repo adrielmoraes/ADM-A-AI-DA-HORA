@@ -4,41 +4,43 @@
   place-items: center;
   padding: 24px;
   position: relative;
+  overflow: hidden;
 }
 
+/* Background animated glow */
 .main::before {
   content: '';
   position: absolute;
-  width: 300px;
-  height: 300px;
+  width: 600px;
+  height: 600px;
   background: var(--primary);
   filter: blur(150px);
   border-radius: 50%;
-  opacity: 0.15;
-  top: 10%;
-  left: 10%;
+  opacity: 0.1;
+  top: -200px;
+  left: -200px;
   z-index: -1;
-  animation: float 10s infinite ease-in-out;
+  animation: float 15s infinite ease-in-out;
 }
 
 .main::after {
   content: '';
   position: absolute;
-  width: 250px;
-  height: 250px;
+  width: 500px;
+  height: 500px;
   background: var(--secondary);
-  filter: blur(120px);
+  filter: blur(150px);
   border-radius: 50%;
-  opacity: 0.15;
-  bottom: 10%;
-  right: 10%;
+  opacity: 0.1;
+  bottom: -150px;
+  right: -150px;
   z-index: -1;
-  animation: float 8s infinite ease-in-out reverse;
+  animation: float 12s infinite ease-in-out reverse;
 }
 
 @keyframes float {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(20px, -20px); }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -30px) scale(1.1); }
 }
 
 .card {
@@ -51,71 +53,96 @@
   backdrop-filter: blur(var(--blur));
   -webkit-backdrop-filter: blur(var(--blur));
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  opacity: 0.5;
 }
 
 .title {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 800;
-  color: #4c1d95;
   letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--foreground) 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 30px var(--primary-glow);
 }
 
 .subtitle {
   margin-top: 8px;
   color: var(--text-muted);
   font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .form {
   margin-top: 32px;
   display: grid;
-  gap: 20px;
+  gap: 24px;
 }
 
 .label {
   display: grid;
   gap: 8px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--foreground);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .input {
-  height: 48px;
+  height: 52px;
   padding: 0 16px;
   border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid var(--border-input);
+  background: rgba(0, 0, 0, 0.2);
   color: var(--foreground);
-  font-size: 15px;
-  transition: all 0.2s ease;
+  font-size: 16px;
+  transition: all 0.3s ease;
 }
 
 .input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 4px var(--primary-glow);
-  background: var(--surface);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .button {
-  height: 48px;
+  height: 52px;
   border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-  color: #000;
+  border: 1px solid var(--primary);
+  background: rgba(6, 182, 212, 0.1);
+  color: var(--primary);
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 8px;
+  margin-top: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
+  position: relative;
+  overflow: hidden;
 }
 
 .button:hover {
+  background: var(--primary);
+  color: #000;
+  box-shadow: 0 0 30px var(--primary-glow);
   transform: translateY(-2px);
-  box-shadow: 0 0 20px var(--primary-glow);
 }
 
 .button:active {
@@ -123,7 +150,7 @@
 }
 
 .error {
-  padding: 12px;
+  padding: 16px;
   border-radius: 12px;
   border: 1px solid var(--error-border);
   background: var(--error-bg);
@@ -131,5 +158,6 @@
   font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }

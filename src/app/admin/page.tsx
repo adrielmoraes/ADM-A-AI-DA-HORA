@@ -5,12 +5,12 @@ import styles from "./admin.module.css";
 import { AdminForms } from "./AdminForms";
 import { validarDespesaAction } from "./actions";
 import { Prisma } from "@prisma/client";
+import { computeCostsByDay, computeFixosByDay, sumByDay, sumPaneirosByDay } from "@/lib/finance";
 import {
   addDaysUtc,
   dateRangeUtc,
   enumerateDaysUtc,
   formatDateBr,
-  formatDateInputValue,
   parseDateOnly,
   startOfMonthUtc,
 } from "@/lib/date";
@@ -21,70 +21,6 @@ function todayDateInputValue() {
   const m = String(now.getMonth() + 1).padStart(2, "0");
   const d = String(now.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-}
-
-function sumByDay(rows: { data: Date; valor: Prisma.Decimal }[]) {
-  const map = new Map<string, Prisma.Decimal>();
-  for (const r of rows) {
-    const key = formatDateInputValue(
-      new Date(Date.UTC(r.data.getUTCFullYear(), r.data.getUTCMonth(), r.data.getUTCDate())),
-    );
-    map.set(key, (map.get(key) ?? new Prisma.Decimal(0)).plus(r.valor));
-  }
-  return map;
-}
-
-function sumPaneirosByDay(rows: { data: Date; paneiros: number }[]) {
-  const map = new Map<string, number>();
-  for (const r of rows) {
-    const key = formatDateInputValue(r.data);
-    map.set(key, (map.get(key) ?? 0) + r.paneiros);
-  }
-  return map;
-}
-
-function computeCostsByDay(
-  days: Date[],
-  configs: { effectiveFrom: Date; custoPaneiroInsumo: Prisma.Decimal }[],
-  paneirosByDay: Map<string, number>,
-) {
-  const costs = new Map<string, Prisma.Decimal>();
-  if (configs.length === 0) return costs;
-
-  let idx = 0;
-  for (const day of days) {
-    const dayKey = formatDateInputValue(day);
-    const paneiros = paneirosByDay.get(dayKey) ?? 0;
-    
-    if (configs[0].effectiveFrom > day) {
-      costs.set(dayKey, new Prisma.Decimal(0));
-      continue;
-    }
-    while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
-    const costPerPaneiro = configs[idx].custoPaneiroInsumo;
-    costs.set(dayKey, costPerPaneiro.mul(paneiros));
-  }
-  return costs;
-}
-
-function computeFixosByDay(
-  days: Date[],
-  configs: { effectiveFrom: Date; aluguelMensal: Prisma.Decimal; energiaMensal: Prisma.Decimal }[],
-) {
-  const fixos = new Map<string, Prisma.Decimal>();
-  if (configs.length === 0) return fixos;
-
-  let idx = 0;
-  for (const day of days) {
-    if (configs[0].effectiveFrom > day) {
-      fixos.set(formatDateInputValue(day), new Prisma.Decimal(0));
-      continue;
-    }
-    while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
-    const daily = configs[idx].aluguelMensal.plus(configs[idx].energiaMensal).div(30);
-    fixos.set(formatDateInputValue(day), daily);
-  }
-  return fixos;
 }
 
 export default async function AdminPage() {
@@ -261,6 +197,12 @@ export default async function AdminPage() {
         </div>
       </div>
 
+      {despesasPendentes.length > 0 ? (
+        <div className={styles.err}>
+          {despesasPendentes.length} despesa(s) pendente(s) aguardando aprovação
+        </div>
+      ) : null}
+
       <div className={styles.grid} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: '16px' }}>
         <div className={styles.card} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div className={styles.meta}>Entradas (Hoje)</div>
@@ -283,6 +225,11 @@ export default async function AdminPage() {
         <div className={styles.card} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div className={styles.meta}>Paneiros (Hoje)</div>
           <div style={{ fontSize: '24px', fontWeight: '700' }}>{paneiros}</div>
+          {paneiros === 0 ? (
+            <div className={styles.meta} style={{ fontSize: '12px', color: '#fca5a5' }}>
+              Nenhuma produção registrada hoje
+            </div>
+          ) : null}
         </div>
         <div className={styles.card} style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid var(--success-border)', background: 'var(--success-bg)' }}>
           <div className={styles.meta} style={{ color: '#86efac' }}>Lucro Estimado (Hoje)</div>

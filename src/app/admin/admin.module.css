@@ -12,59 +12,101 @@
   gap: 16px;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 .title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--foreground);
+  letter-spacing: -0.03em;
+  color: transparent;
+  background: linear-gradient(135deg, var(--foreground) 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 0 30px var(--primary-glow);
 }
 
 .meta {
-  opacity: 0.7;
+  opacity: 0.8;
   font-size: 14px;
-  font-family: monospace;
-  color: var(--secondary);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 8px 16px;
+  border: 1px solid var(--border-glow);
+  border-radius: 100px;
+  background: rgba(6, 182, 212, 0.05);
 }
 
 .grid {
   display: grid;
-  gap: 20px;
+  gap: 24px;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 .card {
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
+  border-radius: 24px;
   padding: 24px;
-  background: var(--surface);
+  background: var(--glass-bg);
   backdrop-filter: blur(var(--blur));
   -webkit-backdrop-filter: blur(var(--blur));
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Futuristic sheen effect */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.card:hover::before {
+  left: 100%;
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: 0 0 20px var(--primary-glow), inset 0 0 20px rgba(6, 182, 212, 0.05);
 }
 
 .h2 {
   font-size: 18px;
   font-weight: 600;
-  margin-bottom: 16px;
-  color: var(--primary);
+  margin-bottom: 20px;
+  color: var(--foreground);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.h2 svg {
+  color: var(--primary);
+  filter: drop-shadow(0 0 5px var(--primary));
 }
 
 .form {
   display: grid;
-  gap: 16px;
+  gap: 20px;
 }
 
 .filterForm {
@@ -76,39 +118,47 @@
 
 .summaryGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 24px;
 }
 
 .valueCard {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
 }
 
 .valueLabel {
-  font-size: 13px;
-  opacity: 0.7;
+  font-size: 12px;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 
 .valueBig {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.02em;
+  color: var(--foreground);
 }
 
 .textSuccess {
   color: var(--success);
+  text-shadow: 0 0 10px var(--success-bg);
 }
 
 .textError {
   color: var(--error);
+  text-shadow: 0 0 10px var(--error-bg);
 }
 
 .textPrimary {
   color: var(--primary);
+  text-shadow: 0 0 10px var(--primary-glow);
 }
 
 .label {
@@ -116,65 +166,75 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 500;
-  opacity: 0.9;
+  color: var(--text-muted);
 }
 
 .input {
-  height: 42px;
-  padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface);
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-input);
+  background: rgba(0, 0, 0, 0.2);
   color: var(--foreground);
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  font-size: 14px;
 }
 
 .input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-glow);
-  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .button {
-  height: 44px;
-  border-radius: 8px;
-  border: none;
-  background: var(--surface);
-  color: inherit;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--foreground);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid var(--border);
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 20px;
+  gap: 10px;
+  padding: 0 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 13px;
 }
 
 .button:hover {
-  background: var(--surface-hover);
+  background: var(--primary);
   border-color: var(--primary);
-  color: var(--primary);
+  color: #000; /* Contrast on bright cyan */
+  box-shadow: 0 0 20px var(--primary-glow);
 }
 
 .ok {
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--success-border);
   background: var(--success-bg);
   color: var(--success);
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .err {
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--error-border);
   background: var(--error-bg);
   color: var(--error);
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .table {
@@ -186,20 +246,20 @@
 
 .table th {
   text-align: left;
-  padding: 12px 16px;
+  padding: 16px;
   border-bottom: 1px solid var(--border);
   color: var(--text-muted);
-  font-weight: 500;
-  font-size: 13px;
+  font-weight: 600;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 
 .table td {
   text-align: left;
   padding: 16px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--foreground);
 }
 
 .table tr:last-child td {
@@ -208,133 +268,4 @@
 
 .table tr:hover td {
   background: rgba(255, 255, 255, 0.02);
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  font-size: 12px;
-  font-weight: 500;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.smallButton {
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.smallButton:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: black;
-  box-shadow: 0 0 10px var(--primary-glow);
-}
-
-.fiadoGrid {
-  display: grid;
-  gap: 24px;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 1024px) {
-  .fiadoGrid {
-    grid-template-columns: 350px 1fr;
-    align-items: start;
-  }
-}
-
-.clientList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-  padding-right: 8px;
-}
-
-.clientItem {
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.clientItem:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--primary);
-}
-
-.clientItemActive {
-  background: rgba(6, 182, 212, 0.1);
-  border-color: var(--primary);
-  box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
-}
-
-.clientName {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--foreground);
-}
-
-.clientMeta {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.balanceTag {
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-@media (max-width: 640px) {
-  .main {
-    padding: 16px;
-  }
-
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
-  .card {
-    padding: 18px;
-    border-radius: 16px;
-  }
-
-  .actions {
-    width: 100%;
-  }
-
-  .button {
-    width: 100%;
-  }
-
-  .filterForm {
-    gap: 12px;
-  }
 }

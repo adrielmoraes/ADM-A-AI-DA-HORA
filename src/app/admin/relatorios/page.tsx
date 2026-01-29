@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-user";
 import styles from "../admin.module.css";
+import { computeCostsByDay, computeFixosByDay, sumByDay, sumPaneirosByDay } from "@/lib/finance";
 import {
   addDaysUtc,
   addMonthsUtc,
@@ -17,12 +18,6 @@ type Period = "week" | "month";
 function getPeriod(value: string | undefined): Period {
   if (value === "week" || value === "month") return value;
   return "month";
-}
-
-function dayKeyFromDateTime(date: Date) {
-  return formatDateInputValue(
-    new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())),
-  );
 }
 
 function formatCurrency(value: number | Prisma.Decimal) {
@@ -42,68 +37,6 @@ function formatDayLabel(dateStr: string) {
     weekday: "short",
     timeZone: "UTC",
   }).format(date);
-}
-
-function sumByDay<T extends { data: Date; valor: Prisma.Decimal }>(rows: T[]) {
-  const map = new Map<string, Prisma.Decimal>();
-  for (const r of rows) {
-    const key = dayKeyFromDateTime(r.data);
-    map.set(key, (map.get(key) ?? new Prisma.Decimal(0)).plus(r.valor));
-  }
-  return map;
-}
-
-function sumPaneirosByDay(rows: { data: Date; paneiros: number }[]) {
-  const map = new Map<string, number>();
-  for (const r of rows) {
-    const key = formatDateInputValue(r.data);
-    map.set(key, (map.get(key) ?? 0) + r.paneiros);
-  }
-  return map;
-}
-
-function computeCostsByDay(
-  days: Date[],
-  configs: { effectiveFrom: Date; custoPaneiroInsumo: Prisma.Decimal }[],
-  paneirosByDay: Map<string, number>,
-) {
-  const costs = new Map<string, Prisma.Decimal>();
-  if (configs.length === 0) return costs;
-
-  let idx = 0;
-  for (const day of days) {
-    const dayKey = formatDateInputValue(day);
-    const paneiros = paneirosByDay.get(dayKey) ?? 0;
-    
-    if (configs[0].effectiveFrom > day) {
-      costs.set(dayKey, new Prisma.Decimal(0));
-      continue;
-    }
-    while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
-    const costPerPaneiro = configs[idx].custoPaneiroInsumo;
-    costs.set(dayKey, costPerPaneiro.mul(paneiros));
-  }
-  return costs;
-}
-
-function computeFixosByDay(
-  days: Date[],
-  configs: { effectiveFrom: Date; aluguelMensal: Prisma.Decimal; energiaMensal: Prisma.Decimal }[],
-) {
-  const fixos = new Map<string, Prisma.Decimal>();
-  if (configs.length === 0) return fixos;
-
-  let idx = 0;
-  for (const day of days) {
-    if (configs[0].effectiveFrom > day) {
-      fixos.set(formatDateInputValue(day), new Prisma.Decimal(0));
-      continue;
-    }
-    while (idx + 1 < configs.length && configs[idx + 1].effectiveFrom <= day) idx += 1;
-    const daily = configs[idx].aluguelMensal.plus(configs[idx].energiaMensal).div(30);
-    fixos.set(formatDateInputValue(day), daily);
-  }
-  return fixos;
 }
 
 export default async function RelatoriosPage({
@@ -167,6 +100,7 @@ export default async function RelatoriosPage({
   const paneirosByDay = sumPaneirosByDay(producao);
   const custosByDay = computeCostsByDay(days, configs, paneirosByDay);
   const fixosByDay = computeFixosByDay(days, configs);
+  const diasSemProducao = days.filter((d) => (paneirosByDay.get(formatDateInputValue(d)) ?? 0) === 0).length;
 
   const totalVendasSemFiado = Array.from(vendasSemFiadoByDay.values()).reduce(
     (acc, v) => acc.plus(v),
@@ -283,6 +217,11 @@ export default async function RelatoriosPage({
                 ⚠ Custo de paneiro não configurado
               </div>
             )}
+            {diasSemProducao > 0 && (
+              <div className={styles.meta} style={{ color: "var(--error)" }}>
+                ⚠ {diasSemProducao} dia(s) sem produção registrada
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -322,7 +261,14 @@ export default async function RelatoriosPage({
                         {formatCurrency(des)}
                       </td>
                       <td>{formatCurrency(fixos)}</td>
-                      <td>{paneiros}</td>
+                      <td>
+                        {paneiros}
+                        {paneiros === 0 ? (
+                          <div className={styles.meta} style={{ fontSize: "11px", color: "var(--error)" }}>
+                            Sem produção
+                          </div>
+                        ) : null}
+                      </td>
                       <td>{formatCurrency(custo)}</td>
                       <td
                         style={{ fontWeight: "bold" }}

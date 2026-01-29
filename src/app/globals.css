@@ -1,33 +1,47 @@
 :root {
-  /* Tema Claro com Verde Limão */
-  --background: #f8fafc; /* Slate 50 */
-  --foreground: #0f172a; /* Slate 900 */
-  --text-muted: #64748b; /* Slate 500 */
+  /* Futuristic Dark Theme Palette */
   
-  --primary: #84cc16; /* Lime 500 */
-  --primary-hover: #65a30d; /* Lime 600 */
-  --primary-glow: rgba(132, 204, 22, 0.4);
+  /* Backgrounds */
+  --background: #0b1121; /* Deepest Blue/Black */
+  --surface: #151e32; /* Deep Blue Surface */
+  --surface-hover: #1e293b; /* Slate 800 */
   
-  --secondary: #475569; /* Slate 600 */
-  --secondary-hover: #334155; /* Slate 700 */
-  --secondary-glow: rgba(71, 85, 105, 0.4);
+  /* Text */
+  --foreground: #f8fafc; /* Slate 50 - High contrast */
+  --text-muted: #94a3b8; /* Slate 400 */
+  
+  /* Primary - Neon Cyan */
+  --primary: #06b6d4; /* Cyan 500 */
+  --primary-hover: #22d3ee; /* Cyan 400 */
+  --primary-light: rgba(6, 182, 212, 0.1);
+  --primary-glow: rgba(6, 182, 212, 0.4);
+  
+  /* Secondary - Neon Purple Accent */
+  --secondary: #8b5cf6; /* Violet 500 */
+  --secondary-hover: #a78bfa; /* Violet 400 */
+  --secondary-glow: rgba(139, 92, 246, 0.4);
 
-  --surface: #ffffff;
-  --surface-hover: #f1f5f9; /* Slate 100 */
-  --border: #e2e8f0; /* Slate 200 */
-  --border-glow: rgba(132, 204, 22, 0.25);
-
-  --error: #ef4444;
-  --error-bg: rgba(239, 68, 68, 0.1);
-  --error-border: rgba(239, 68, 68, 0.2);
-
-  --success: #22c55e;
-  --success-bg: rgba(34, 197, 94, 0.1);
-  --success-border: rgba(34, 197, 94, 0.2);
-
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(226, 232, 240, 0.8);
-  --blur: 12px;
+  /* Surfaces */
+  /* --surface defined above for consistency */
+  
+  /* Borders */
+  --border: #334155; /* Slate 700 */
+  --border-input: #475569; /* Slate 600 */
+  --border-glow: rgba(6, 182, 212, 0.3);
+  
+  /* States */
+  --error: #f43f5e; /* Rose 500 */
+  --error-bg: rgba(136, 19, 55, 0.2);
+  --error-border: #9f1239;
+  
+  --success: #10b981; /* Emerald 500 */
+  --success-bg: rgba(6, 78, 59, 0.2);
+  --success-border: #065f46;
+  
+  /* Effects */
+  --glass-bg: rgba(21, 30, 50, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --blur: 16px;
 }
 
 html,
@@ -40,9 +54,13 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
+  /* Futuristic Grid & Glow */
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(132, 204, 22, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 100%, rgba(71, 85, 105, 0.05) 0%, transparent 50%);
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 85% 90%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+  background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%;
   background-attachment: fixed;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -58,28 +76,30 @@ body {
 a {
   color: inherit;
   text-decoration: none;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
 }
 
 a:hover {
   color: var(--primary);
+  text-shadow: 0 0 8px var(--primary-glow);
 }
 
-/* Scrollbar moderna */
+/* Scrollbar futurista */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.15);
+  background: var(--secondary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(15, 23, 42, 0.3);
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
 }

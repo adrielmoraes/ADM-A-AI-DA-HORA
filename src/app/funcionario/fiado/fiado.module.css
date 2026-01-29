@@ -1,9 +1,48 @@
 .main {
+  /* Light Theme Override for Funcionario Panel */
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
+  --foreground: #0f172a;
+  --text-muted: #64748b;
+  
+  /* Primary - Clean Teal/Cyan for Light Mode */
+  --primary: #0891b2; /* Cyan 700 */
+  --primary-hover: #0e7490; /* Cyan 800 */
+  --primary-light: #ecfeff; /* Cyan 50 */
+  --primary-glow: rgba(8, 145, 178, 0.15);
+  
+  /* Secondary */
+  --secondary: #475569; /* Slate 600 */
+  --secondary-hover: #334155; /* Slate 700 */
+  
+  /* Borders */
+  --border: #e2e8f0; /* Slate 200 */
+  --border-input: #cbd5e1; /* Slate 300 */
+  --glass-border: #e2e8f0;
+  
+  /* Glass Effect - Reduced for light mode legibility */
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --blur: 12px;
+  
+  /* Status */
+  --error: #ef4444; /* Red 500 */
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  
+  --success: #10b981; /* Emerald 500 */
+  --success-bg: #ecfdf5;
+  --success-border: #a7f3d0;
+
+  background: var(--background); /* Ensure background is applied */
+  color: var(--foreground);
+
   padding: 24px;
   display: grid;
   gap: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  min-height: 100vh;
 }
 
 .top {
