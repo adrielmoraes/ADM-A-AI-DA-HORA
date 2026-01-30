@@ -27,7 +27,7 @@ export async function upsertConfigAction(_: ActionState | null, formData: FormDa
     const effectiveFromStr = String(formData.get("effectiveFrom") ?? "").trim();
     const precoStr = String(formData.get("precoLitroVenda") ?? "").trim();
     const custoStr = String(formData.get("custoPaneiroInsumo") ?? "").trim();
-    const quantidadePaneirosStr = String(formData.get("quantidadePaneiros") ?? "").trim();
+
 
     if (!effectiveFromStr || !precoStr || !custoStr) {
       return { ok: false, message: "Preencha data, preço e custo." };
